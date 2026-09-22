@@ -1,0 +1,76 @@
+[size=5][b]Find The Needle — Multiplayer (co-op)[/b][/size]
+
+Dig the same haystack with your friends. One yard, several players, everything
+shared: the pile, the buildings, the money and the needles.
+
+Connection runs over [b]Steam's relay network[/b], the same one official co-op
+games use: [b]no port forwarding, no IP addresses, no VPN[/b]. You invite from
+the Steam friends list and your friend lands in your yard.
+
+[size=4][b]Features[/b][/size]
+[list]
+[*][b]Shared haystack[/b] — everyone digs the same pile and sees it change live.
+[*][b]Shared building[/b] — structures, conveyors and platforms placed or
+demolished by anyone show up for everyone.
+[*][b]Shared economy[/b] — money, debt, hay sold, needles found and the whole
+collection.
+[*][b]Shared tech tree[/b] — an upgrade bought by one player unlocks for all.
+[*][b]Shared needles[/b] — an uncovered needle is visible to everybody and can
+only be handed in once.
+[*][b]See each other[/b] — player figures with Steam names and the tool in hand.
+[*][b]Steam invites[/b] — overlay invites, friends-list joins, or accepting an
+invite while the game is closed.
+[*][b]Chat[/b] in game, and a resync key if anything ever drifts.
+[*][b]Streamer safe[/b] — the panel never shows IPs, Steam IDs or lobby codes.
+[/list]
+
+[size=4][b]Requirements[/b][/size]
+[list]
+[*]Find The Needle Demo (free on Steam), build V26 or newer
+[*]Windows 64-bit
+[*]Every player needs the same mod version
+[*]Launch the game from Steam (invites need the overlay)
+[/list]
+
+[size=4][b]Installation[/b][/size]
+[list=1]
+[*]Unzip the download.
+[*]Copy the [b]mods[/b] folder next to [b]FindTheNeedle.exe[/b]
+(Steam → right-click the game → Manage → Browse local files).
+[*]Run [b]mods\multiplayer\INSTALL.bat[/b].
+[*]Start the game from Steam — the main menu now has MULTIPLAYER.
+[/list]
+To remove it, run [b]UNINSTALL.bat[/b]: it puts the game back exactly as it was.
+
+[b]After every game update, run INSTALL.bat again[/b] — Steam updates overwrite
+the file that registers the mod.
+
+[size=4][b]How to play[/b][/size]
+[b]Host:[/b] MULTIPLAYER → CREATE GAME → INVITE FRIENDS, then start or load your
+save as usual.
+[b]Friends:[/b] accept the Steam invite. Nothing to type.
+
+[b]Keys:[/b] F2 panel · Y chat · F8 resync
+
+[size=4][b]Known limitations[/b][/size]
+[list]
+[*]Machines that feed themselves from the pile (piston rake, robotic arm,
+drone, scanner) run only on the host; on clients they stand still. This is
+deliberate — it stops hay and money being counted twice.
+[*]Loose props (buckets, sacks, bales) are per-player.
+[*]Machine settings (filters, switches) are not shared yet.
+[*]Bought tools are per-player; money is shared.
+[*]Only the host saves. Clients never touch their own saves.
+[*]The online leaderboard is disabled while the mod is active.
+[/list]
+
+[size=4][b]Credits[/b][/size]
+[list]
+[*]Mod by [b]AleDev11[/b]
+[*]Find The Needle by FindTheNeedleDev
+[*]GodotSteam GDExtension (MIT) — godotsteam.com
+[*]Steamworks SDK © Valve Corporation
+[/list]
+
+Unofficial mod, not affiliated with or endorsed by the game's developer. It
+contains no game files — only its own scripts, which the game loads at startup.

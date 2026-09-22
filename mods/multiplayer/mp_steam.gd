@@ -1,0 +1,210 @@
+# Steam side of the multiplayer mod.
+#
+# The demo ships without the Steam API, so the mod loads the GodotSteam
+# GDExtension at runtime (GDExtensionManager.load_extension) and initialises
+# Steam under the demo's app id. That buys us Steam's relay network: players
+# connect through Steam instead of a direct IP, so nobody has to open a port,
+# and friends can be invited straight from the Steam overlay.
+extends Node
+
+const APP_ID := 5165210  # Find The Needle Demo
+
+var available := false      # extension loaded and Steam initialised
+var load_status := ""
+var steam: Object = null
+var steam_id := 0
+var persona := ""
+var lobby_id := 0
+var lobby_owner := 0
+
+signal lobby_created(ok: bool, id: int)
+signal lobby_joined(ok: bool, id: int, reason: String)
+signal join_requested(id: int)
+signal lobby_members_changed()
+
+
+func setup(base_dir: String) -> Dictionary:
+	if available:
+		return {"ok": true, "status": load_status}
+	_write_app_id_file()
+	if not ClassDB.class_exists("SteamMultiplayerPeer") and not Engine.has_singleton("Steam"):
+		var path := base_dir + "/steam/godotsteam.gdextension"
+		if not FileAccess.file_exists(path):
+			load_status = "no encuentro %s" % path
+			return {"ok": false, "status": load_status}
+		var st: int = GDExtensionManager.load_extension(path)
+		if st != GDExtensionManager.LOAD_STATUS_OK and st != GDExtensionManager.LOAD_STATUS_ALREADY_LOADED:
+			load_status = "la librería de Steam no cargó (código %d)" % st
+			return {"ok": false, "status": load_status}
+	if not Engine.has_singleton("Steam"):
+		load_status = "la librería cargó pero no registró Steam"
+		return {"ok": false, "status": load_status}
+	steam = Engine.get_singleton("Steam")
+	var res: Variant = steam.call("steamInitEx", APP_ID, true)
+	var code := 0
+	var verbal := ""
+	if res is Dictionary:
+		code = int(res.get("status", -1))
+		verbal = str(res.get("verbal", ""))
+	if code != 0:
+		load_status = "Steam no arrancó: %s" % verbal
+		return {"ok": false, "status": load_status}
+	steam_id = int(steam.call("getSteamID"))
+	persona = str(steam.call("getPersonaName"))
+	available = true
+	load_status = "Steam listo (%s)" % persona
+	_connect_signals()
+	set_process(true)
+	return {"ok": true, "status": load_status}
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_process(false)
+
+
+func _process(_delta: float) -> void:
+	if steam != null:
+		steam.call("run_callbacks")
+
+
+func _write_app_id_file() -> void:
+	# lets Steam identify the game when it is launched outside the Steam client
+	var path := OS.get_executable_path().get_base_dir() + "/steam_appid.txt"
+	if FileAccess.file_exists(path):
+		return
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f != null:
+		f.store_string(str(APP_ID))
+		f.close()
+
+
+func _connect_signals() -> void:
+	_link("lobby_created", _on_lobby_created)
+	_link("lobby_joined", _on_lobby_joined)
+	_link("join_requested", _on_join_requested)
+	_link("join_game_requested", _on_join_game_requested)
+	_link("lobby_chat_update", _on_lobby_chat_update)
+	_link("lobby_invite", _on_lobby_invite)
+
+
+func _link(sig: String, cb: Callable) -> void:
+	if steam.has_signal(sig) and not steam.is_connected(sig, cb):
+		steam.connect(sig, cb)
+
+
+# ---------------------------------------------------------------- lobbies
+
+func host_lobby(max_players: int = 8) -> void:
+	# 2 = LOBBY_TYPE_PUBLIC is searchable; FRIENDS_ONLY keeps it to invites
+	steam.call("createLobby", 1, max_players)
+
+
+func join_lobby(id: int) -> void:
+	steam.call("joinLobby", id)
+
+
+func leave_lobby() -> void:
+	if lobby_id != 0:
+		steam.call("leaveLobby", lobby_id)
+		lobby_id = 0
+		lobby_owner = 0
+
+
+func invite_overlay() -> void:
+	if lobby_id != 0:
+		steam.call("activateGameOverlayInviteDialog", lobby_id)
+
+
+func lobby_members() -> Array:
+	var out: Array = []
+	if lobby_id == 0:
+		return out
+	var n := int(steam.call("getNumLobbyMembers", lobby_id))
+	for i in n:
+		out.append(int(steam.call("getLobbyMemberByIndex", lobby_id, i)))
+	return out
+
+
+func name_of(id: int) -> String:
+	if steam == null:
+		return "Jugador"
+	return str(steam.call("getFriendPersonaName", id))
+
+
+func set_lobby_data(key: String, value: String) -> void:
+	if lobby_id != 0:
+		steam.call("setLobbyData", lobby_id, key, value)
+
+
+func get_lobby_data(key: String) -> String:
+	if lobby_id == 0:
+		return ""
+	return str(steam.call("getLobbyData", lobby_id, key))
+
+
+func _on_lobby_created(connect_code: int, id: int) -> void:
+	if connect_code == 1:
+		lobby_id = id
+		lobby_owner = steam_id
+		set_lobby_data("game", "find_the_needle_mp")
+		set_lobby_data("host", persona)
+		# lets friends use "Join game" from the Steam friends list
+		steam.call("setRichPresence", "connect", "+connect_lobby %d" % id)
+		steam.call("setRichPresence", "steam_display", "#Status_Playing")
+		lobby_created.emit(true, id)
+	else:
+		lobby_created.emit(false, 0)
+
+
+# A friend clicked "Join game" in the Steam friends list.
+func _on_join_game_requested(_user: int, connect_string: String) -> void:
+	var id := lobby_from_connect(connect_string)
+	if id != 0:
+		join_requested.emit(id)
+
+
+# Steam passes "+connect_lobby <id>" either on the command line (game was
+# closed) or through the join_game_requested signal (game already open).
+static func lobby_from_connect(text: String) -> int:
+	var parts := text.split(" ", false)
+	for i in parts.size():
+		if parts[i] == "+connect_lobby" and i + 1 < parts.size():
+			return int(parts[i + 1])
+	return 0
+
+
+func lobby_from_command_line() -> int:
+	var args := OS.get_cmdline_args()
+	args.append_array(OS.get_cmdline_user_args())
+	return lobby_from_connect(" ".join(args))
+
+
+func _on_lobby_joined(id: int, _perms: int, _locked: bool, response: int) -> void:
+	if response == 1:
+		lobby_id = id
+		lobby_owner = int(steam.call("getLobbyOwner", id))
+		lobby_joined.emit(true, id, "")
+	else:
+		lobby_joined.emit(false, id, "respuesta %d" % response)
+
+
+func _on_join_requested(id: int, _friend_id: int) -> void:
+	join_requested.emit(id)
+
+
+func _on_lobby_invite(_inviter: int, id: int, _game: int) -> void:
+	join_requested.emit(id)
+
+
+func _on_lobby_chat_update(_id: int, _changed: int, _making: int, _state: int) -> void:
+	lobby_members_changed.emit()
+
+
+# ---------------------------------------------------------------- peers
+
+# A MultiplayerPeer that talks over Steam's relay instead of a UDP socket.
+func make_peer() -> MultiplayerPeer:
+	if not ClassDB.class_exists("SteamMultiplayerPeer"):
+		return null
+	return ClassDB.instantiate("SteamMultiplayerPeer")

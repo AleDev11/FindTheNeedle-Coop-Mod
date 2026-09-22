@@ -1,0 +1,69 @@
+FIND THE NEEDLE - MOD MULTIJUGADOR (cooperativo)  v0.3.0
+=========================================================
+
+Mod NO oficial y de uso privado. Todos los jugadores necesitan el juego
+(la demo, gratis en Steam) y ESTE MISMO mod en la MISMA version.
+
+No hay que abrir puertos ni instalar nada raro: la conexion va por la red
+de Steam, igual que en los juegos con cooperativo online.
+
+INSTALAR
+--------
+1. Copia la carpeta "mods" dentro de la carpeta del juego, junto a
+   FindTheNeedle.exe  (Steam > clic derecho en el juego > Administrar >
+   Ver archivos locales).
+2. Ejecuta  mods\multiplayer\INSTALAR.bat
+3. Abre el juego DESDE STEAM. En el menu principal aparece MULTIPLAYER.
+
+Para quitarlo: DESINSTALAR.bat (deja el juego como estaba).
+
+IMPORTANTE: si Steam actualiza el juego, vuelve a ejecutar INSTALAR.bat
+(la actualizacion borra el archivo donde se registra el mod).
+
+JUGAR
+-----
+Anfitrion (el que pone la partida):
+  1. MULTIPLAYER > CREAR PARTIDA.
+  2. INVITAR AMIGOS (se abre la lista de amigos de Steam) o que te
+     entren desde tu perfil, boton "Unirse a la partida".
+  3. Empieza o carga tu partida como siempre: tus amigos apareceran en ella.
+
+Amigos:
+  Acepta la invitacion de Steam. Entras solo, sin escribir ninguna IP.
+  Si el juego estaba cerrado, Steam lo abre y te mete directamente.
+
+Tambien queda, en CONEXION POR IP (AVANZADO), el modo antiguo por IP
+directa, por si algun dia falla Steam.
+
+TECLAS
+------
+  F2  panel multijugador (tambien dentro de la partida)
+  Y   chat
+  F8  resincronizar el mundo si algo se ve distinto
+
+QUE SE COMPARTE
+---------------
+  - Todos en el mismo pajar: lo que cava uno lo ven todos.
+  - Construcciones: colocar y derribar edificios, cintas, plataformas...
+  - Dinero, deuda, paja vendida, agujas encontradas y coleccion.
+  - Arbol de mejoras (tech).
+  - Agujas destapadas: las ve todo el mundo y solo cuentan una vez.
+  - Nuevas cargas de paja (se resincroniza a todos).
+  - Ves a los demas con su nombre de Steam y la herramienta en la mano.
+
+LIMITACIONES DE ESTA VERSION
+----------------------------
+  - Las maquinas que sacan paja del pajar por su cuenta (rastrillo de
+    piston, brazo robotico, dron, escaner) solo funcionan en el
+    ordenador del anfitrion; en los clientes se ven quietas.
+  - Los objetos sueltos (cubos, sacos, fardos) son de cada jugador.
+  - Los ajustes de las maquinas (filtros, interruptores) no se comparten.
+  - Las herramientas compradas son de cada jugador (el dinero es comun).
+  - Solo el anfitrion guarda la partida. Los clientes no tocan sus
+    partidas guardadas.
+  - La tabla de clasificacion online se desactiva mientras juegas con el mod.
+
+CREDITOS DE TERCEROS
+--------------------
+  GodotSteam (GDExtension) - MIT - https://godotsteam.com
+  Steamworks SDK (steam_api64.dll) - (c) Valve Corporation
