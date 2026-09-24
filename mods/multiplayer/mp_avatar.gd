@@ -1,7 +1,6 @@
-# Remote player puppet: an animated farmer (models/farmer.glb), a name tag and
-# the tool they are holding. If the model is missing or fails to load, a simple
-# figure built from primitives stands in. Poses arrive ~20 times a second and
-# are smoothed.
+# Remote player puppet: an animated farmer, a name tag and the tool they are
+# holding. Falls back to the old primitive figure if the model won't load.
+# Poses arrive ~20 times a second and are smoothed.
 extends Node3D
 
 const TOOL_NAMES := ["mano", "pala", "horca", "escoba", "palita", "detector", "aspiradora", "mechero", "construir"]
@@ -14,25 +13,21 @@ const TOOL_MODELS := {
 	6: "res://assets/models/yard_vac.glb",
 }
 const TOOL_LENGTH := 1.2
-# the game's tool models come in wildly different units, so each is scaled to
-# a real-world length (metres) instead of one size for all
+# tool models come in all sorts of units, so each gets a real length (m)
 const TOOL_LENGTHS := {1: 1.1, 2: 1.35, 3: 1.3, 4: 0.65, 5: 0.55, 6: 1.0}
 const EYE := 1.66
 
-# The farmer: "Ultimate Modular Men Pack" by Quaternius (CC0), trimmed to the
-# clips used here by dev/models/slim_glb.py. Loaded at runtime with
-# GLTFDocument, so it lives beside the scripts and never touches the game pack.
+# farmer from Quaternius' Ultimate Modular Men Pack (CC0), see models/CREDITS.txt
 const MODEL_FILE := "models/farmer.glb"
-const MODEL_HEIGHT := 1.78  # the game's STAND_HEIGHT, hat included
-# Ground speed (m/s) each clip covers at speed 1, measured from the feet. The
-# game moves at 4.2 m/s (7.0 sprinting, 1.9 crouched), so normal movement
-# plays Run and only slow movement plays Walk; clips are sped up to match.
+const MODEL_HEIGHT := 1.78  # same as the player's STAND_HEIGHT
+# clip ground speeds in m/s. the player walks at 4.2 (7 sprinting), which is
+# already a jog, so Walk is only used when slow or crouched
 const WALK_CLIP_SPEED := 1.3
 const RUN_CLIP_SPEED := 3.05
-const RUN_FROM := 2.6  # faster than this plays Run
-const CROUCH_DROP := 0.45  # how far the pelvis sinks when fully crouched
-const CROUCH_LEAN := 0.35  # torso tilt forward (radians) when fully crouched
-const TINTS := {"LightBlue": 0.25, "Red": 0.0}  # material -> how much to darken the player colour
+const RUN_FROM := 2.6
+const CROUCH_DROP := 0.45
+const CROUCH_LEAN := 0.35
+const TINTS := {"LightBlue": 0.25, "Red": 0.0}  # overalls, hat band
 
 var _target_pos := Vector3.ZERO
 var _target_yaw := 0.0
@@ -44,7 +39,7 @@ var flip_tool := false  # turn the held tool 180 degrees (for new models)
 var _has_target := false
 var _walk := 0.0
 var _pitch := 0.0
-var _crouch_now := 0.0  # smoothed _crouch
+var _crouch_now := 0.0
 
 var _body: Node3D
 var _head: Node3D
@@ -55,7 +50,7 @@ var _name := ""
 var _color := Color.WHITE
 static var _model_cache := {}
 
-# farmer model (null when running on the primitive fallback)
+# farmer only
 var _skel: Skeleton3D
 var _anim: AnimationPlayer
 var _clip := ""
@@ -64,9 +59,9 @@ var _b_upper := -1
 var _b_lower := -1
 var _b_wrist := -1
 var _b_palm := -1
-var _b_body := -1  # pelvis: lowered to crouch
+var _b_body := -1
 var _b_hips := -1
-var _legs: Array = []  # [thigh, shin, foot, thigh length, shin length] per side
+var _legs: Array = []  # [thigh, shin, foot, thigh len, shin len]
 static var _farmer: PackedScene
 static var _farmer_tried := false
 
@@ -143,8 +138,7 @@ func _build_farmer() -> bool:
 	_b_palm = _skel.find_bone("Middle1.R")
 	_b_body = _skel.find_bone("Body")
 	_b_hips = _skel.find_bone("Hips")
-	# the feet are IK targets parented to the root, so they stay planted while
-	# the legs bend; measure the leg bones once from the rest pose
+	# feet hang off the root (IK targets) so they stay put when the legs bend
 	for side in ["L", "R"]:
 		var thigh := _skel.find_bone("UpperLeg." + side)
 		var shin := _skel.find_bone("LowerLeg." + side)
@@ -156,7 +150,7 @@ func _build_farmer() -> bool:
 		var f := _skel.get_bone_global_rest(foot).origin
 		_legs.append([thigh, shin, foot, h.distance_to(kn), kn.distance_to(f)])
 
-	# stand it on the ground at a fixed height, facing -Z like the player
+	# feet on the ground, facing -Z like the player
 	var box := _aabb(model, Transform3D.IDENTITY)
 	var s := MODEL_HEIGHT / maxf(box.size.y, 0.001)
 	var holder := Node3D.new()
@@ -166,7 +160,7 @@ func _build_farmer() -> bool:
 	holder.add_child(model)
 	_body.add_child(holder)
 
-	# dye the overalls and the hat band in the player's colour
+	# overalls and hat band in the player's colour
 	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		if mi.mesh == null:
@@ -181,11 +175,11 @@ func _build_farmer() -> bool:
 	for clip in ["Idle", "Walk", "Run"]:
 		if _anim.has_animation(clip):
 			_anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
-	# advanced by hand in _process, so the head and arm can be posed on top
+	# advanced by hand so we can pose the head and arm on top
 	_anim.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	_play("Idle", 0.0)
 
-	# tools hang from a grip that follows the right hand every frame
+	# follows the right hand, tools hang off it
 	_hand = Node3D.new()
 	add_child(_hand)
 	return true
@@ -212,7 +206,7 @@ func _animate_farmer(delta: float) -> void:
 			_anim.speed_scale = clampf(_moving / RUN_CLIP_SPEED, 0.8, 2.0)
 		_:
 			_anim.speed_scale = 1.0
-	# bones the clips may not key would keep last frame's pose: start clean
+	# not every clip keys these, so reset them or last frame's pose sticks
 	for b in [_b_head, _b_upper, _b_lower, _b_body, _b_hips]:
 		if b >= 0:
 			_skel.reset_bone_pose(b)
@@ -228,11 +222,11 @@ func _animate_farmer(delta: float) -> void:
 		lean = CROUCH_LEAN * _crouch_now
 		_crouch_legs(_crouch_now, right)
 	if _b_head >= 0:
-		# the head keeps looking where the player looks, whatever the torso does
+		# undo the lean so the head still looks where they look
 		_turn_bone(_b_head, right, clampf(_pitch, -0.7, 0.7) + lean)
 	var holding := _tool_node != null
 	if holding and _b_upper >= 0 and _b_lower >= 0:
-		# upper arm down along the side, forearm out front following the aim
+		# elbow by the side, forearm out front
 		_aim_bone(_b_upper, fwd.rotated(right, -1.05 + _pitch * 0.25))
 		_aim_bone(_b_lower, fwd.rotated(right, -0.3 + _pitch * 0.8))
 	var grip_bone := _b_palm if _b_palm >= 0 else _b_wrist
@@ -242,13 +236,13 @@ func _animate_farmer(delta: float) -> void:
 			Basis(right, _pitch * 0.8 - 0.35) * global_basis.orthonormalized(), grip.origin)
 
 
-# Rotate a bone by `angle` around a world-space axis, on top of its current pose.
+# rotate a bone around a world axis, on top of its current pose
 func _turn_bone(b: int, axis_world: Vector3, angle: float) -> void:
 	var axis := (_skel.global_basis.inverse() * axis_world).normalized()
 	_rotate_bone(b, Quaternion(axis, angle))
 
 
-# Swing a bone so it points along `dir_world` (bones run along their own +Y).
+# point a bone along a world direction (bones run along +Y)
 func _aim_bone(b: int, dir_world: Vector3) -> void:
 	_aim_bone_local(b, _skel.global_basis.inverse() * dir_world)
 
@@ -261,8 +255,7 @@ func _aim_bone_local(b: int, want: Vector3) -> void:
 	_rotate_bone(b, Quaternion(cur, want))
 
 
-# Crouch: drop the pelvis, lean the torso forward and bend each leg (two-bone
-# IK) so the knee goes out front and the shin still ends on the planted foot.
+# lower the pelvis, lean forward and bend the knees so the feet stay planted
 func _crouch_legs(amount: float, right: Vector3) -> void:
 	var to_skel := _skel.global_basis.inverse()
 	if _b_body >= 0:
@@ -281,15 +274,14 @@ func _crouch_legs(amount: float, right: Vector3) -> void:
 		var s: float = leg[4]
 		var d := clampf(hip.distance_to(foot), absf(t - s) + 0.0001, t + s - 0.0001)
 		var dir := (foot - hip).normalized()
-		# law of cosines for the angle at the hip; turning about the right axis
-		# by a positive angle swings the knee forward
+		# hip angle from the law of cosines, positive = knee forward
 		var a := acos(clampf((t * t + d * d - s * s) / (2.0 * t * d), -1.0, 1.0))
 		var knee := hip + dir.rotated(axis, a) * t
 		_aim_bone_local(leg[0], knee - hip)
 		_aim_bone_local(leg[1], foot - _skel.get_bone_global_pose(leg[1]).origin)
 
 
-# Apply a skeleton-space rotation to a bone, keeping it in its parent's frame.
+# rot is in skeleton space
 func _rotate_bone(b: int, rot: Quaternion) -> void:
 	var parent := _skel.get_bone_parent(b)
 	var pg := Quaternion.IDENTITY
@@ -442,8 +434,8 @@ func _set_tool_model(tool: int) -> void:
 	var inst := scene.instantiate() as Node3D
 	if inst == null:
 		return
-	# scale every tool to its real length, pointing forward
-	# (scaled through a mount, so the model's own root transform is kept)
+	# scale to its real length, pointing forward. the mount keeps the model's
+	# own root transform intact
 	var holder := Node3D.new()
 	var mount := Node3D.new()
 	holder.add_child(mount)
@@ -464,7 +456,7 @@ func _set_tool_model(tool: int) -> void:
 		elif box.size.x >= box.size.z:
 			holder.rotation.y = -turn * PI / 2.0
 	if _skel != null:
-		# the grip is the palm itself: held a quarter of the way down the shaft
+		# held a quarter of the way down
 		holder.position = Vector3(0.0, 0.0, -length * 0.25)
 	else:
 		# hold it just past the fist, angled down a little like a carried tool

@@ -16,13 +16,13 @@ j['animations'] = [a for a in j.get('animations', []) if short(a['name']) in kee
 for a in j['animations']:
     a['name'] = short(a['name'])
 
-# no textures -> UVs are dead weight
+# no textures, no need for UVs
 if not j.get('textures'):
     for m in j.get('meshes', []):
         for p in m['primitives']:
             p['attributes'].pop('TEXCOORD_0', None)
 
-# skin data to 8 bits: joint indices (<256 bones) and normalised weights
+# joints and weights fit in 8 bits
 import numpy as np
 replace = {}  # bufferView index -> new bytes
 for m in j.get('meshes', []):
@@ -44,7 +44,7 @@ for m in j.get('meshes', []):
                 w = v.astype(np.float64) if dt == np.float32 else v / 255.0
                 w = w / np.maximum(w.sum(1, keepdims=True), 1e-9)
                 q = np.floor(w * 255).astype(np.int32)
-                # hand the rounding remainder to the biggest weight so rows sum to 255
+                # rows must add up to 255
                 q[np.arange(len(q)), w.argmax(1)] += 255 - q.sum(1)
                 out8 = q.astype(np.uint8)
                 a['normalized'] = True
