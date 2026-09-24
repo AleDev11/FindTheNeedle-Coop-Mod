@@ -126,6 +126,23 @@ Instead:
 Everything is applied by walking the live scene tree and calling the game's own
 methods, so no game code is copied or redistributed.
 
+## For contributors
+
+The mod is plain GDScript in `mods/multiplayer`: `mp.gd` (session and RPCs),
+`mp_world.gd` (world sync), `mp_steam.gd` (Steam), `mp_ui.gd` (panel) and
+`mp_avatar.gd` (the remote-player figure). Nothing is compiled — edit a file and
+restart the game.
+
+Tool models hang off the avatar's hand in `mp_avatar.gd`. Each model is scaled
+to `TOOL_LENGTH` along its longest axis and turned so its working end points
+away from the hand; set `flip_tool` on an avatar to turn a model 180 degrees
+while testing a new one.
+
+`dev/mp_test.gd` is a test harness: copy it next to `mp.gd` and start the game
+with `MP_TEST_AVATAR=user://saves/slot_1.dat` (plus `MP_TEST_TOOL=1` for the
+spade) to get a screenshot of two puppets holding that tool, one of them
+flipped.
+
 ## Credits
 
 - Mod by **AleDev11**.

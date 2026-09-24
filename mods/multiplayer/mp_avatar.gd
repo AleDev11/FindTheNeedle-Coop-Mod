@@ -20,6 +20,7 @@ var _target_pitch := 0.0
 var _crouch := 0.0
 var _moving := 0.0
 var _tool := -1
+var flip_tool := false  # turn the held tool 180 degrees (for new models)
 var _has_target := false
 var _walk := 0.0
 
@@ -189,10 +190,14 @@ func _set_tool_model(tool: int) -> void:
 		var s := TOOL_LENGTH / longest
 		inst.scale = Vector3.ONE * s
 		inst.position = -box.get_center() * s
+		# Which way the tool points along its long axis. The default puts the
+		# working end (blade, fork, nozzle) away from the hand; flip_tool turns
+		# it 180 degrees, which is handy when trying out new tool models.
+		var turn := -1.0 if flip_tool else 1.0
 		if box.size.y >= box.size.x and box.size.y >= box.size.z:
-			holder.rotation.x = -PI / 2.0  # long axis up -> forward
+			holder.rotation.x = turn * PI / 2.0  # long axis up -> forward
 		elif box.size.x >= box.size.z:
-			holder.rotation.y = PI / 2.0
+			holder.rotation.y = -turn * PI / 2.0
 	# hold it just past the fist, angled down a little like a carried tool
 	holder.position = Vector3(0.0, -0.05, -0.52 - TOOL_LENGTH * 0.35)
 	holder.rotation.x += 0.25

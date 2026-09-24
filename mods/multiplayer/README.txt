@@ -1,4 +1,4 @@
-FIND THE NEEDLE - MULTIPLAYER (co-op) MOD  v0.3.0
+FIND THE NEEDLE - MULTIPLAYER (co-op) MOD  v0.4.0
 ==================================================
 
 Unofficial mod for private use. Every player needs the game (the free Steam

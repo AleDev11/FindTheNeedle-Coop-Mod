@@ -131,6 +131,23 @@ En su lugar:
 Todo se aplica recorriendo el árbol de escena en vivo y llamando a los métodos
 del propio juego, así que no se copia ni se redistribuye código del juego.
 
+## Para colaboradores
+
+El mod es GDScript en `mods/multiplayer`: `mp.gd` (sesión y RPCs),
+`mp_world.gd` (sincronización), `mp_steam.gd` (Steam), `mp_ui.gd` (panel) y
+`mp_avatar.gd` (la figura del otro jugador). No hay nada que compilar: editas
+un archivo y reinicias el juego.
+
+Los modelos de herramienta cuelgan de la mano del avatar, en `mp_avatar.gd`.
+Cada modelo se escala a `TOOL_LENGTH` por su eje más largo y se gira para que
+la parte útil apunte lejos de la mano; con `flip_tool` en un avatar se gira
+180 grados, útil al probar un modelo nuevo.
+
+`dev/mp_test.gd` es el arnés de pruebas: cópialo junto a `mp.gd` y arranca el
+juego con `MP_TEST_AVATAR=user://saves/slot_1.dat` (y `MP_TEST_TOOL=1` para la
+pala) para sacar una captura de dos muñecos con esa herramienta, uno de ellos
+girado.
+
 ## Créditos
 
 - Mod de **AleDev11**.

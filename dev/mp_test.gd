@@ -218,21 +218,21 @@ func _probe_steam() -> void:
 func _show_avatar() -> void:
 	var ws: Node = mp.world_sync
 	var p: Node3D = ws.player
-	var spot: Vector3 = ws.world._seat(Vector3(12.4, 0.0, 12.4))  # open yard by the shop
-	p.global_position = spot
+	p.global_position = ws.world._seat(Vector3(12.4, 0.0, 12.4))
 	await get_tree().create_timer(1.0).timeout
-	var av: Node3D = load(mp.base_dir + "/mp_avatar.gd").new()
-	av.setup("Amigo", Color(0.3, 0.65, 0.98))
-	ws.world.add_child(av)
-	var at: Vector3 = ws.world._seat(Vector3(12.4, 0.0, 9.4))
-	av.set_target(at, PI, 0.0, 1, 0.0, 0.0)  # facing the camera, holding the spade
-	var d := at - p.global_position
+	# same tool twice, close up: left = current, right = turned 180 degrees
+	var mid: Vector3 = ws.world._seat(Vector3(9.6, 0.0, 10.6))
+	var tool_id := int(OS.get_environment("MP_TEST_TOOL")) if OS.get_environment("MP_TEST_TOOL") != "" else 1
+	for i in 2:
+		var av: Node3D = load(mp.base_dir + "/mp_avatar.gd").new()
+		av.setup("A" if i == 0 else "B (180)", Color(0.3, 0.65, 0.98))
+		av.flip_tool = i == 1
+		ws.world.add_child(av)
+		av.set_target(mid + Vector3(float(i) * 2.4 - 1.2, 0.0, 0.0), PI, 0.0, tool_id, 0.0, 0.0)
+	var d := mid - p.global_position
 	p.set_look(atan2(-d.x, -d.z), -0.05)
-	await get_tree().create_timer(1.5).timeout
-	_shot("avatar_idle")
-	av.set_target(at, PI, -0.4, 6, 0.0, 3.0)  # walking, yard vac, looking up
-	await get_tree().create_timer(1.0).timeout
-	_shot("avatar_vac")
-	print("[MPTEST] avatar shots done, me=%s avatar=%s" % [p.global_position, at])
+	await get_tree().create_timer(2.0).timeout
+	await _shot("tool%d" % tool_id)
+	print("[MPTEST] tool shot done for tool %d" % tool_id)
 	_clear_sentinel()
 	get_tree().quit()

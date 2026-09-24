@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.4.0
+
+- **Installer rewritten as plain batch.** `INSTALL.bat` and `UNINSTALL.bat` no
+  longer call PowerShell with an execution-policy bypass. They are short,
+  readable scripts that add (or remove) one line in `override.cfg` — easier to
+  audit, and friendlier to Nexus Mods' file checks.
+- **Game updates no longer lose the developer's settings.** The installer takes
+  the current `override.cfg` as its base instead of restoring an old backup, so
+  anything a game update added is kept.
+- **Held tools face the right way.** Remote players were holding the spade and
+  the pitchfork by the head; the model is now turned 180 degrees. `flip_tool`
+  on the avatar turns it back, which helps when trying out new tool models.
+- Tested on game build V30.
+
 ## v0.3.0
 
 - **Streamer safety:** the panel no longer prints IP addresses, Steam IDs or

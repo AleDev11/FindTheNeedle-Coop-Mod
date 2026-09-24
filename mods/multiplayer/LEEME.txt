@@ -1,4 +1,4 @@
-FIND THE NEEDLE - MOD MULTIJUGADOR (cooperativo)  v0.3.0
+FIND THE NEEDLE - MOD MULTIJUGADOR (cooperativo)  v0.4.0
 =========================================================
 
 Mod NO oficial y de uso privado. Todos los jugadores necesitan el juego
