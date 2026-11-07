@@ -48,8 +48,10 @@ const BUILD_SHAPE_KEYS := ["span", "rise", "kind", "sections", "rows", "side"]
 # of our payload with the game's own loader, so anything missing here reaches
 # it as a default: shed_long_bays decides how long the warehouse is and where
 # the sell stand goes, and leaving it out put the two players' stands eleven
-# metres apart. Sent only when the game has it, so older builds are untouched.
-const CFG_META := {"shed_long_bays": "shed_bays"}
+# metres apart. shed_grid also controls the warehouse layout; a default on
+# the guest offsets the shop and the conveyors attached to it (#22). Sent
+# only when the game has it, so older builds are untouched.
+const CFG_META := {"shed_long_bays": "shed_bays", "shed_grid": "shed_grid"}
 
 const ADD_F := ["money", "debt", "hay_total", "hay_dug", "hay_returned", "hay_sold",
 	"money_earned", "stacks_ordered", "needles_found", "pile_needles_found"]

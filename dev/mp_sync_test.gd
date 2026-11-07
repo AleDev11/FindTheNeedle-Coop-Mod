@@ -128,6 +128,19 @@ func _g_check_money(host_money: float, host_dug: float) -> void:
 
 
 @rpc("authority", "call_remote", "reliable", 0)
+func _g_check_layout(host_bays: Variant, host_grid: Variant, host_stand: Vector3) -> void:
+	var bays: Variant = Cfg.get("shed_long_bays")
+	var grid: Variant = Cfg.get("shed_grid")
+	var stand: Variant = _world().get("stand")
+	var same_stand: bool = stand is Node3D and stand.global_position.distance_to(host_stand) < 0.01
+	_report.rpc_id(1, "warehouse layout matches the host's",
+		bays == host_bays and grid == host_grid and same_stand,
+		"bays %s/%s, grid %s/%s, stand %s/%s (host/guest)" % [
+			host_bays, bays, host_grid, grid, host_stand,
+			stand.global_position if stand is Node3D else "missing"])
+
+
+@rpc("authority", "call_remote", "reliable", 0)
 func _g_check_missions() -> void:
 	var paid := 0
 	for i in MissionBook.count():
@@ -209,6 +222,15 @@ func _run_host() -> void:
 		await _wait(2.0)
 		get_tree().quit(0)
 		return
+
+	# A late join must keep the host's warehouse grid as well as its length:
+	# otherwise the shop and the conveyors connected to it are offset (#22).
+	var stand: Variant = w.get("stand")
+	if stand is Node3D:
+		_g_check_layout.rpc_id(gid, Cfg.get("shed_long_bays"), Cfg.get("shed_grid"), stand.global_position)
+		await _wait(1.0)
+	else:
+		_check("warehouse layout matches the host's", false, "host has no sell stand")
 
 	# 1. both dig at once; the host's pile settles and is the reference
 	_g_dig.rpc_id(gid, 10, 7)

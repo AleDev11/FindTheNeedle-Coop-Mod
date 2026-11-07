@@ -954,17 +954,19 @@ func _print_layout() -> void:
 	var ws: Node = mp.world_sync
 	var w: Node = ws.world
 	var bays: Variant = Cfg.get("shed_long_bays")
+	var grid: Variant = Cfg.get("shed_grid")
 	var stand: Variant = w.get("stand")
 	var shed: Variant = w.get("warehouse")
 	var span: Variant = null
 	if shed != null and is_instance_valid(shed) and shed.has_method("span_z"):
 		span = shed.call("span_z")
-	print("[LAYOUT] %s shed_long_bays=%s stand=%s span_z=%s" % [role, bays,
+	print("[LAYOUT] %s shed_long_bays=%s shed_grid=%s stand=%s span_z=%s" % [role, bays, grid,
 		(stand as Node3D).global_position if stand != null and is_instance_valid(stand) else "?",
 		span])
 	if role == "host":
 		var meta: Dictionary = ws.build_payload(2).get("meta", {})
-		print("[LAYOUT] host payload meta shed_bays=%s" % [meta.get("shed_bays", "AUSENTE")])
+		print("[LAYOUT] host payload meta shed_bays=%s shed_grid=%s" % [
+			meta.get("shed_bays", "AUSENTE"), meta.get("shed_grid", "AUSENTE")])
 
 
 # Host places a rake, the guest flips its switch on its own copy, and both
